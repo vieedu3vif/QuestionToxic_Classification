@@ -3,20 +3,6 @@
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.svm import LinearSVC
 from sklearn.metrics import f1_score, accuracy_score, precision_score, recall_score, confusion_matrix
-from sklearn.model_selection import train_test_split
-import seaborn as sns
-import re
-import string
-import os
-import seaborn as sb
-from sklearn.cluster import KMeans
-import matplotlib.pyplot as plt
-from scipy.sparse import coo_matrix, hstack
-from sklearn import preprocessing
-from tqdm import tqdm
-import numpy as np
-import pandas as pd
-import numpy as np # linear algebra
 import pandas as pd # data processing, CSV file I/O (e.g. pd.read_csv)
 
 train = pd.read_csv('data/train.csv')
