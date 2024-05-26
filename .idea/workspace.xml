@@ -4,7 +4,15 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="c5267de3-099b-4f56-adc1-2ae1c843c232" name="Changes" comment="data augmentation" />
+    <list default="true" id="c5267de3-099b-4f56-adc1-2ae1c843c232" name="Changes" comment="data augmentation">
+      <change beforePath="$PROJECT_DIR$/README.md" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/data/test.csv" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/data/train.csv" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/lgt_regression.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/mchien.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/svm.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/test_duc.py" beforeDir="false" />
+    </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -89,7 +97,8 @@
     "Python.anhduc.executor": "Run",
     "Python.test.executor": "Run",
     "RunOnceActivity.OpenProjectViewOnStart": "true",
-    "RunOnceActivity.ShowReadmeOnStart": "true"
+    "RunOnceActivity.ShowReadmeOnStart": "true",
+    "git-widget-placeholder": "anhduc"
   }
 }]]></component>
   <component name="SharedIndexes">
@@ -188,7 +197,15 @@
       <option name="project" value="LOCAL" />
       <updated>1716729445420</updated>
     </task>
-    <option name="localTasksCounter" value="11" />
+    <task id="LOCAL-00011" summary="data augmentation">
+      <option name="closed" value="true" />
+      <created>1716730420604</created>
+      <option name="number" value="00011" />
+      <option name="presentableId" value="LOCAL-00011" />
+      <option name="project" value="LOCAL" />
+      <updated>1716730420604</updated>
+    </task>
+    <option name="localTasksCounter" value="12" />
     <servers />
   </component>
   <component name="Vcs.Log.Tabs.Properties">
