@@ -61,7 +61,7 @@ def clean_tag(x):
 
 # Lọai bỏ số 
 def delete_number(strings) :
-    return ''.join([char for char in strings if char not in digits])
+    return ''.join([char.lower() for char in strings if char not in digits])
 
 
 # Tách kí tự đặc biệt
