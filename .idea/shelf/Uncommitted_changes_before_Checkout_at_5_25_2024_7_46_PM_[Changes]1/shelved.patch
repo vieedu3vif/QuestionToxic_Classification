@@ -1,0 +1,81 @@
+Index: anhduc.py
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+>#anh duc code tren file nay\r\n\r\nfrom sklearn.feature_extraction.text import TfidfVectorizer\r\nfrom sklearn.svm import LinearSVC\r\nfrom sklearn.metrics import f1_score, accuracy_score, precision_score, recall_score, confusion_matrix\r\nimport pandas as pd # data processing, CSV file I/O (e.g. pd.read_csv)\r\n\r\ntrain = pd.read_csv('data/train.csv')\r\ntest = pd.read_csv('data/test.csv')\r\nX_target0 = train[train.target == 0].sample(frac=0.9)  # Lấy mẫu ngẫu nhiên từ lớp 0\r\nX_target1 = train[train.target == 1].sample(frac=0.9)  # Lớp 1\r\n\r\nprint(\"Tổng số dữ liệu trong tập train: \",train.shape[0])\r\nprint(\"Số câu hỏi bình thường: \", len(train[train.target == 0]))\r\nprint(\"Số câu hỏi toxic: \",len(train[train.target == 1]))\r\nprint(\"Tỉ lệ giữa 2 lớp: \",len(train[train.target == 1])/len(train[train.target == 0]))\r\n\r\n#Hàm dự đoán sử dụng linear\r\ntfidf = TfidfVectorizer(ngram_range=(1, 3))\r\ndef predict_linearSVC(X_train, y_train, X_test):\r\n    tfidf.fit(X_train)\r\n    X_train_tfidf = tfidf.transform(X_train)\r\n    X_test_tfidf = tfidf.transform(X_test)\r\n    weights = {}\r\n    weights[0] = len(X_target0) / 2 * len(X_train)\r\n    weights[1] = len(X_target1) / 2 * len(X_train)\r\n    y = [0, 1]\r\n    class_weight = {val: weights[index] for index, val in enumerate(y)}\r\n    svm = LinearSVC()\r\n    svm.fit(X_train_tfidf, y_train)\r\n    train_predictions = svm.predict(X_train_tfidf)\r\n    test_predictions = svm.predict(X_test_tfidf)\r\n    return train_predictions, test_predictions\r\n\r\n# Dự đoán trên tập validation\r\n# def validate_base_model():\r\n#     train = pd.read_csv('data/train.csv')\r\n#     train = train.dropna(subset=['question_text'])\r\n#     X = train.question_text\r\n#     y = train.target\r\n#     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)\r\n#     train_predictions, test_predictions= predict_linearSVC(X_train, y_train, X_test)\r\n#     train_accuracy = accuracy_score(y_train, train_predictions)\r\n#     test_accuracy = accuracy_score(y_test, test_predictions)\r\n#     f1 = f1_score(y_test, test_predictions)\r\n#     print(f\"Train Accuracy: {train_accuracy}\")\r\n#     print(f\"Validation Accuracy: {test_accuracy}\")\r\n#     return f1\r\n\r\ndef validate_undersampling():\r\n    data = pd.concat([X_target0, X_target1])  # Nối hai DataFrame lại với nhau\r\n    data = data.sample(frac=1, random_state=42).reset_index(drop=True)\r\n    data_augmented = pd.concat([X_target0, X_target1, X_target1, X_target1, X_target1]) # Lặp lại dữ liệu nhãn 1 4 lần\r\n    data_augmented = data_augmented.sample(frac=1, random_state=42).reset_index(drop=True)\r\n    X = data_augmented.question_text\r\n    y = data_augmented.target\r\n\r\n    remaining_data = train.drop(data.index) # Lấy phần data chưa dùng để train từ tập train gốc để test\r\n    remaining_data = remaining_data.sample(frac=1, random_state=42).reset_index(drop=True)\r\n    X_test = remaining_data.question_text\r\n    y_test = remaining_data.target\r\n\r\n    train_predictions, test_predictions = predict_linearSVC(X, y, X_test)\r\n\r\n    train_accuracy = accuracy_score(y, train_predictions)\r\n    test_accuracy = accuracy_score(y_test, test_predictions)\r\n    train_precision = precision_score(y, train_predictions)\r\n    test_precision = precision_score(y_test, test_predictions)\r\n    train_recall = recall_score(y, train_predictions)\r\n    test_recall = recall_score(y_test, test_predictions)\r\n    f1 = f1_score(y_test, test_predictions)\r\n\r\n\r\n    tn, fp, fn, tp = confusion_matrix(y_test, test_predictions).ravel()\r\n    precision1_score = tp / (tp + fp)\r\n    recall1_score = tp / (tp + fn)\r\n    print(\"Precision score\", precision1_score)\r\n    print(\"Recall score\", recall1_score)\r\n\r\n    print(\"Train Accuracy: \", train_accuracy)\r\n    print(\"Validation Accuracy: \", test_accuracy)\r\n    print(\"Train Precision: \", train_precision)\r\n    print(\"Validation Precision: \", test_precision)\r\n    print(\"Train Recall: \", train_recall)\r\n    print(\"Validation Recall: \", test_recall)\r\n\r\n    return f1\r\n\r\nprint(\"F1-Score với Under Sampling: \", validate_undersampling())\r\n# print('F1-Score của base-model trên tập validation: ',validate_base_model())
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/anhduc.py b/anhduc.py
+--- a/anhduc.py	
++++ b/anhduc.py	
+@@ -4,11 +4,12 @@
+ from sklearn.svm import LinearSVC
+ from sklearn.metrics import f1_score, accuracy_score, precision_score, recall_score, confusion_matrix
+ import pandas as pd # data processing, CSV file I/O (e.g. pd.read_csv)
++from eda import EDA
+ 
+ train = pd.read_csv('data/train.csv')
+ test = pd.read_csv('data/test.csv')
+ X_target0 = train[train.target == 0].sample(frac=0.9)  # Lấy mẫu ngẫu nhiên từ lớp 0
+-X_target1 = train[train.target == 1].sample(frac=0.9)  # Lớp 1
++X_target1 = train[train.target == 1]  # Lớp 1
+ 
+ print("Tổng số dữ liệu trong tập train: ",train.shape[0])
+ print("Số câu hỏi bình thường: ", len(train[train.target == 0]))
+@@ -17,6 +18,7 @@
+ 
+ #Hàm dự đoán sử dụng linear
+ tfidf = TfidfVectorizer(ngram_range=(1, 3))
++t = EDA(random_state=1)
+ def predict_linearSVC(X_train, y_train, X_test):
+     tfidf.fit(X_train)
+     X_train_tfidf = tfidf.transform(X_train)
+@@ -31,26 +33,26 @@
+     train_predictions = svm.predict(X_train_tfidf)
+     test_predictions = svm.predict(X_test_tfidf)
+     return train_predictions, test_predictions
+-
+-# Dự đoán trên tập validation
+-# def validate_base_model():
+-#     train = pd.read_csv('data/train.csv')
+-#     train = train.dropna(subset=['question_text'])
+-#     X = train.question_text
+-#     y = train.target
+-#     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+-#     train_predictions, test_predictions= predict_linearSVC(X_train, y_train, X_test)
+-#     train_accuracy = accuracy_score(y_train, train_predictions)
+-#     test_accuracy = accuracy_score(y_test, test_predictions)
+-#     f1 = f1_score(y_test, test_predictions)
+-#     print(f"Train Accuracy: {train_accuracy}")
+-#     print(f"Validation Accuracy: {test_accuracy}")
+-#     return f1
++def word(text, n):
++    for _ in range(n):
++        res = text
++        if len(res.split()) > 1:
++            res = t.random_insertion(res)
++        if len(res.split()) > 1:
++            res = t.synonym_replacement(res, top_n=10*n+n-1)
++        if len(res.split()) > 1:
++            res = t.random_deletion(res, p=0.1)
++    return res
+ 
+ def validate_undersampling():
+     data = pd.concat([X_target0, X_target1])  # Nối hai DataFrame lại với nhau
+     data = data.sample(frac=1, random_state=42).reset_index(drop=True)
+-    data_augmented = pd.concat([X_target0, X_target1, X_target1, X_target1, X_target1]) # Lặp lại dữ liệu nhãn 1 4 lần
++    ina = X_target1['question_text']
++    x1 = ina.apply(word, args = [2])
++    x2 = ina.apply(word, args = [4])
++    x3 = ina.apply(word, args = [7])
++    x4 = ina.apply(word, args = [9])
++    data_augmented = pd.concat([X_target0, X_target1, x1, x2, x3, x4])
+     data_augmented = data_augmented.sample(frac=1, random_state=42).reset_index(drop=True)
+     X = data_augmented.question_text
+     y = data_augmented.target
+@@ -87,4 +89,3 @@
+     return f1
+ 
+ print("F1-Score với Under Sampling: ", validate_undersampling())
+-# print('F1-Score của base-model trên tập validation: ',validate_base_model())
+\ No newline at end of file

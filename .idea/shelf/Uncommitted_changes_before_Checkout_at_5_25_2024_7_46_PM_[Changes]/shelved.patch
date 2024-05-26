@@ -1,0 +1,40 @@
+Index: test.py
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+>from eda import EDA\r\n\r\nt = EDA(random_state=1)\r\noutput = t.synonym_replacement(\"Why do females find penises ugly?\", top_n=100)\r\nprint(output)\r\noutput = t.random_insertion(\"John is going to town\" )\r\nprint(output)\r\noutput = t.random_insertion(\"Why do females find penises ugly?\")\r\nprint(output)
+===================================================================
+diff --git a/test.py b/test.py
+--- a/test.py	
++++ b/test.py	
+@@ -1,9 +1,24 @@
++import pandas as pd
+ from eda import EDA
+ 
+ t = EDA(random_state=1)
+-output = t.synonym_replacement("Why do females find penises ugly?", top_n=100)
+-print(output)
+-output = t.random_insertion("John is going to town" )
+-print(output)
+-output = t.random_insertion("Why do females find penises ugly?")
+-print(output)
+\ No newline at end of file
++
++train = pd.read_csv('data/train.csv')
++X_target1 = train[train.target == 1]
++inan = X_target1['question_text']
++
++def troll_word(text, n):
++    for _ in range(n):
++        res = text
++        if len(res.split()) > 1:
++            res = t.random_insertion(res)
++        if len(res.split()) > 1:
++            res = t.synonym_replacement(res, top_n=10*n+n-1)
++        if len(res.split()) > 1:
++            res = t.random_deletion(res, p=0.1)
++    return res
++
++result_df = inan.apply(troll_word, args = [3])
++
++print(result_df)
++
