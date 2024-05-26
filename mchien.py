@@ -1,5 +1,5 @@
 # minh chien code tren file nay
-
+#Hello 
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.svm import LinearSVC
 from sklearn.metrics import f1_score
