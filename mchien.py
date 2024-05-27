@@ -26,13 +26,14 @@ train = pd.read_csv('/kaggle/input/quora-insincere-questions-classification/trai
 test = pd.read_csv('/kaggle/input/quora-insincere-questions-classification/test.csv')
 test.head()
 
-# In ra dữ liệu 
+# In ra dữ liệu trong tập data
 print("Tổng số dữ liệu trong tập train: ",train.shape[0])
 print("Số câu hỏi bình thường: ", len(train[train.target == 0]))
 print("Số câu hỏi toxic: ",len(train[train.target == 1]))
 print("Tỉ lệ giữa 2 lớp: ",len(train[train.target == 1])/len(train[train.target == 0]))
 print('\n')
-#sb.countplot(train['target'])
+
+#Biểu diễn số câu chân thành và không chân thành bằng biểu đồ
 cnt_srs = train['target'].value_counts()
 
 ## target distribution ##
@@ -50,7 +51,10 @@ data = [trace]
 fig = go.Figure(data=data, layout=layout)
 py.iplot(fig, filename="usertype")
 
-# Xứ lý kí tự toán học và link URL
+
+# Xứ lý xóa kí tự toán học và link URL, 
+# Các biểu thức và đường dẫn gần như không có ý nghĩa trong việc phân loại câu hỏi và việc để nguyên các đường dẫn và biểu thức toán này trong quá trình encoding với Tfidf
+# sẽ biến thành các trường khác nhau dễ gây ra nhiễu ảnh hưởng tới quá trình huấn luyện và dự đoán.
 def clean_tag(x):
   if '[math]' in x:
     x = re.sub('\[math\].*?math\]', 'MATH EQUATION', x) #replacing with [MATH EQUATION]    
@@ -59,12 +63,12 @@ def clean_tag(x):
   return x
 
 
-# Lọai bỏ số 
+# Xóa bỏ số ra khỏi chuỗi, số cũng không có tác dụng trong phân loại câu hỏi nên ta xóa bỏ chúng 
 def delete_number(strings) :
-    return ''.join([char.lower() for char in strings if char not in digits])
+    return ''.join([char for char in strings if char not in digits])
 
 
-# Tách kí tự đặc biệt
+# Các dấu, kí tự đặc biệt, icon, memoji thường không có tác dụng phân loại vì thế ta đơn giản xóa bỏ chúng khỏi câu.
 puncts = [',', '.', '"', ':', ')', '(', '-', '!', '?', '|', ';', "'", '$', '&', '/', '[', ']', '>', '%', '=', '#', '*', '+', '\\', 
         '•', '~', '@', '£', '·', '_', '{', '}', '©', '^', '®', '`', '<', '→', '°', '€', '™', '›', '♥', '←', '×', '§', '″', '′', 
         '█', '…', '“', '★', '”', '–', '●', '►', '−', '¢', '¬', '░', '¡', '¶', '↑', '±', '¿', '▾', '═', '¦', '║', '―', '¥', '▓', 
@@ -109,42 +113,22 @@ puncts = [',', '.', '"', ':', ')', '(', '-', '!', '?', '|', ';', "'", '$', '&', 
         'ü' ,'ý' ,'þ','ÿ']
 
 def clean_punct(x):
-    x = str(x)
     for punct in puncts:
-        x = x.replace(punct, f' {punct} ')
-    return x
+        if punct in x:
+            x = x.replace(punct, ' ')
+        return x
 
-def find_unique_words():
-    unique_words = {'a'}
-    non_unique_words = {'a'}
-    for i in tqdm(range(0,len(train))):
-        for word in train.question_text.iloc[i].split():
-            if word in unique_words:
-                non_unique_words.add(word)
-            else:
-                unique_words.add(word)
-    a = pd.DataFrame(unique_words - non_unique_words)
-    return a
-#find_unique_words().head(30)
-
-# Chuyển từ về từ thông dụng
+# Trong bộ dữ liệu có cả Anh-Anh và Anh-Mỹ nên chúng ta cần thống nhất ngữ pháp về một loại
+# Sửa lỗi chính tả, Tên gọi trong một số lĩnh vực khác nhau nên sẽ đưa chung về một dạng tên chung. vd: tên một số tiền ảo ta đưa về chung là bitcoin, 1080ti ta đưa về GPU
 mispell_dict = {'colour': 'color', 'centre': 'center', 'favourite': 'favorite', 'travelling': 'traveling', 'counselling': 'counseling', 'theatre': 'theater', 'cancelled': 'canceled', 'labour': 'labor', 'organisation': 'organization', 'wwii': 'world war 2', 'citicise': 'criticize', 'youtu ': 'youtube ', 'Qoura': 'Quora', 'sallary': 'salary', 'Whta': 'What', 'narcisist': 'narcissist', 'howdo': 'how do', 'whatare': 'what are', 'howcan': 'how can', 'howmuch': 'how much', 'howmany': 'how many', 'whydo': 'why do', 'doI': 'do I', 'theBest': 'the best', 'howdoes': 'how does', 'mastrubation': 'masturbation', 'mastrubate': 'masturbate', "mastrubating": 'masturbating', 'pennis': 'penis', 'Etherium': 'bitcoin', 'narcissit': 'narcissist', 'bigdata': 'big data', '2k17': '2017', '2k18': '2018', 'qouta': 'quota', 'exboyfriend': 'ex boyfriend', 'airhostess': 'air hostess', "whst": 'what', 'watsapp': 'whatsapp', 'demonitisation': 'demonetization', 'demonitization': 'demonetization', 'demonetisation': 'demonetization', 
-                'electroneum':'bitcoin','nanodegree':'degree','hotstar':'star','dream11':'dream','ftre':'fire','tensorflow':'framework','unocoin':'bitcoin',
+                'electroneum':'bitcoin','nanodegree':'degree','hotstar':'star','dream11':'dream','ftre':'fire','tensorflow':'framework','unocoin':'bitcoin','segwit2x':'bitcoin','hashflare':'bitcoin',
                 'lnmiit':'limit','unacademy':'academy','altcoin':'bitcoin','altcoins':'bitcoin','litecoin':'bitcoin','coinbase':'bitcoin','cryptocurency':'cryptocurrency',
-                'simpliv':'simple','quoras':'quora','schizoids':'psychopath','remainers':'remainder','twinflame':'soulmate','quorans':'quora','brexit':'demonetized',
-                'iiest':'institute','dceu':'comics','pessat':'exam','uceed':'college','bhakts':'devotee','boruto':'anime',
-                'cryptocoin':'bitcoin','blockchains':'blockchain','fiancee':'fiance','redmi':'smartphone','oneplus':'smartphone','qoura':'quora','deepmind':'framework','ryzen':'cpu','whattsapp':'whatsapp',
+                'simpliv':'simple','quoras':'quora','schizoids':'psychopath','remainers':'remainder','twinflame':'soulmate','quorans':'quora','brexit':'demonetized','poloniex':'bitcoin','7700k':'cpu'
+                'iiest':'institute','dceu':'comics','pessat':'exam','uceed':'college','bhakts':'devotee','boruto':'anime','openai':'framework','hashflare':'bitcoin',
+                'cryptocoin':'bitcoin','redmi':'smartphone','oneplus':'smartphone','qoura':'quora','deepmind':'framework','ryzen':'cpu','whattsapp':'whatsapp','blockchains':'blockchain','fiancee':'fiance'
                 'undertale':'adventure','zenfone':'smartphone','cryptocurencies':'cryptocurrencies','koinex':'bitcoin','zebpay':'bitcoin','binance':'bitcoin','whtsapp':'whatsapp',
                 'reactjs':'framework','bittrex':'bitcoin','bitconnect':'bitcoin','bitfinex':'bitcoin','yourquote':'your quote','whyis':'why is','jiophone':'smartphone',
-                'dogecoin':'bitcoin','onecoin':'bitcoin','poloniex':'bitcoin','7700k':'cpu','angular2':'framework','segwit2x':'bitcoin','hashflare':'bitcoin','940mx':'gpu',
-                'openai':'framework','hashflare':'bitcoin','1050ti':'gpu','nearbuy':'near buy','freebitco':'bitcoin','antminer':'bitcoin','filecoin':'bitcoin','whatapp':'whatsapp',
-                'empowr':'empower','1080ti':'gpu','crytocurrency':'cryptocurrency','8700k':'cpu','whatsaap':'whatsapp','g4560':'cpu','payymoney':'pay money',
-                'fuckboys':'fuck boys','intenship':'internship','zcash':'bitcoin','demonatisation':'demonetization','narcicist':'narcissist','mastuburation':'masturbation',
-                'trignometric':'trigonometric','cryptocurreny':'cryptocurrency','howdid':'how did','crytocurrencies':'cryptocurrencies','phycopath':'psychopath',
-                'bytecoin':'bitcoin','possesiveness':'possessiveness','scollege':'college','humanties':'humanities','altacoin':'bitcoin','demonitised':'demonetized',
-                'brasília':'brazilia','accolite':'accolyte','econimics':'economics','varrier':'warrier','quroa':'quora','statergy':'strategy','langague':'language',
-                'splatoon':'game','7600k':'cpu','gate2018':'gate 2018','in2018':'in 2018','narcassist':'narcissist','jiocoin':'bitcoin','hnlu':'hulu','7300hq':'cpu',
-                'weatern':'western','interledger':'blockchain','deplation':'deflation', 'cryptocurrencies':'cryptocurrency', 'bitcoin':'blockchain cryptocurrency',}
+                'dogecoin':'bitcoin','onecoin':'bitcoin','hashflare':'bitcoin','940mx':'gpu', '1050ti':'gpu','nearbuy':'near buy','freebitco':'bitcoin','antminer':'bitcoin','filecoin':'bitcoin','whatapp':'whatsapp', 'empowr':'empower','1080ti':'gpu','crytocurrency':'cryptocurrency','8700k':'cpu','whatsaap':'whatsapp','g4560':'cpu','payymoney':'pay money', 'fuckboys':'fuck boys','intenship':'internship','zcash':'bitcoin','demonatisation':'demonetization','narcicist':'narcissist','mastuburation':'masturbation','trignometric':'trigonometric','cryptocurreny':'cryptocurrency','howdid':'how did','crytocurrencies':'cryptocurrencies','phycopath':'psychopath','bytecoin':'bitcoin','possesiveness':'possessiveness','scollege':'college','humanties':'humanities','altacoin':'bitcoin','demonitised':'demonetized','brasília':'brazilia','accolite':'accolyte','econimics':'economics','varrier':'warrier','quroa':'quora','statergy':'strategy','langague':'language', 'splatoon':'game','7600k':'cpu','gate2018':'gate 2018','in2018':'in 2018','narcassist':'narcissist','jiocoin':'bitcoin','hnlu':'hulu','7300hq':'cpu','weatern':'western','interledger':'blockchain','deplation':'deflation', 'cryptocurrencies':'cryptocurrency', 'bitcoin':'blockchain cryptocurrency',}
 
 def correct_mispell(x):
   words = x.split()
@@ -157,8 +141,16 @@ def correct_mispell(x):
   words = " ".join(words)
   return words
 
-# Chuyển các từ viết tắt về chuẩn
-contraction_mapping = {"We'd": "We had", "That'd": "That had", "AREN'T": "Are not", "HADN'T": "Had not", "Could've": "Could have", "LeT's": "Let us", "How'll": "How will", "They'll": "They will", "DOESN'T": "Does not", "HE'S": "He has", "O'Clock": "Of the clock", "Who'll": "Who will", "What'S": "What is", "Ain't": "Am not", "WEREN'T": "Were not", "Y'all": "You all", "Y'ALL": "You all", "Here's": "Here is", "It'd": "It had", "Should've": "Should have", "I'M": "I am", "ISN'T": "Is not", "Would've": "Would have", "He'll": "He will", "DON'T": "Do not", "She'd": "She had", "WOULDN'T": "Would not", "She'll": "She will", "IT's": "It is", "There'd": "There had", "It'll": "It will", "You'll": "You will", "He'd": "He had", "What'll": "What will", "Ma'am": "Madam", "CAN'T": "Can not", "THAT'S": "That is", "You've": "You have", "She's": "She is", "Weren't": "Were not", "They've": "They have", "Couldn't": "Could not", "When's": "When is", "Haven't": "Have not", "We'll": "We will", "That's": "That is", "We're": "We are", "They're": "They' are", "You'd": "You would", "How'd": "How did", "What're": "What are", "Hasn't": "Has not", "Wasn't": "Was not", "Won't": "Will not", "There's": "There is", "Didn't": "Did not", "Doesn't": "Does not", "You're": "You are", "He's": "He is", "SO's": "So is", "We've": "We have", "Who's": "Who is", "Wouldn't": "Would not", "Why's": "Why is", "WHO's": "Who is", "Let's": "Let us", "How's": "How is", "Can't": "Can not", "Where's": "Where is", "They'd": "They had", "Don't": "Do not", "Shouldn't":"Should not", "Aren't":"Are not", "ain't": "is not", "What's": "What is", "It's": "It is", "Isn't":"Is not", "aren't": "are not","can't": "cannot", "'cause": "because", "could've": "could have", "couldn't": "could not", "didn't": "did not",  "doesn't": "does not", "don't": "do not", "hadn't": "had not", "hasn't": "has not", "haven't": "have not", "he'd": "he would","he'll": "he will", "he's": "he is", "how'd": "how did", "how'd'y": "how do you", "how'll": "how will", "how's": "how is",  "I'd": "I would", "I'd've": "I would have", "I'll": "I will", "I'll've": "I will have","I'm": "I am", "I've": "I have", "i'd": "i would", "i'd've": "i would have", "i'll": "i will",  "i'll've": "i will have","i'm": "i am", "i've": "i have", "isn't": "is not", "it'd": "it would", "it'd've": "it would have", "it'll": "it will", "it'll've": "it will have","it's": "it is", "let's": "let us", "ma'am": "madam", "mayn't": "may not", "might've": "might have","mightn't": "might not","mightn't've": "might not have", "must've": "must have", "mustn't": "must not", "mustn't've": "must not have", "needn't": "need not", "needn't've": "need not have","o'clock": "of the clock", "oughtn't": "ought not", "oughtn't've": "ought not have", "shan't": "shall not", "sha'n't": "shall not", "shan't've": "shall not have", "she'd": "she would", "she'd've": "she would have", "she'll": "she will", "she'll've": "she will have", "she's": "she is", "should've": "should have", "shouldn't": "should not", "shouldn't've": "should not have", "so've": "so have","so's": "so as", "this's": "this is","that'd": "that would", "that'd've": "that would have", "that's": "that is", "there'd": "there would", "there'd've": "there would have", "there's": "there is", "here's": "here is","they'd": "they would", "they'd've": "they would have", "they'll": "they will", "they'll've": "they will have", "they're": "they are", "they've": "they have", "to've": "to have", "wasn't": "was not", "we'd": "we would", "we'd've": "we would have", "we'll": "we will", "we'll've": "we will have", "we're": "we are", "we've": "we have", "weren't": "were not", "what'll": "what will", "what'll've": "what will have", "what're": "what are",  "what's": "what is", "what've": "what have", "when's": "when is", "when've": "when have", "where'd": "where did", "where's": "where is", "where've": "where have", "who'll": "who will", "who'll've": "who will have", "who's": "who is", "who've": "who have", "why's": "why is", "why've": "why have", "will've": "will have", "won't": "will not", "won't've": "will not have", "would've": "would have", "wouldn't": "would not", "wouldn't've": "would not have", "y'all": "you all", "y'all'd": "you all would","y'all'd've": "you all would have","y'all're": "you all are","y'all've": "you all have","you'd": "you would", "you'd've": "you would have", "you'll": "you will", "you'll've": "you will have", "you're": "you are", "you've": "you have" }
+
+# Xử lý một số từ viết tắt về đúng dạng của nó, chúng ta kiểm tra một số từ có cú pháp viết tắt có trong bộ dữ liệu không, nếu có có thì thay bằng từ viết đầy đủ của chúng
+contraction_mapping = {"We'd": "We had", "That'd": "That had", "AREN'T": "Are not", "HADN'T": "Had not", "Could've": "Could have", "LeT's": "Let us", "How'll": "How will", "They'll": "They will", "DOESN'T": "Does not",
+                       "HE'S": "He has", "O'Clock": "Of the clock", "Who'll": "Who will", "What'S": "What is", "Ain't": "Am not", "WEREN'T": "Were not", "Y'all": "You all", "Y'ALL": "You all", "Here's": "Here is",
+                       "It'd": "It had", "Should've": "Should have", "I'M": "I am", "ISN'T": "Is not", "Would've": "Would have", "He'll": "He will", "DON'T": "Do not", "She'd": "She had", "WOULDN'T": "Would not",
+                       "She'll": "She will", "IT's": "It is", "There'd": "There had", "It'll": "It will", "You'll": "You will", "He'd": "He had", "What'll": "What will", "Ma'am": "Madam", "CAN'T": "Can not", 
+                       "THAT'S": "That is", "You've": "You have", "She's": "She is", "Weren't": "Were not", "They've": "They have", "Couldn't": "Could not", "When's": "When is", "Haven't": "Have not", "We'll": "We will"
+                       , "That's": "That is", "We're": "We are", "They're": "They' are", "You'd": "You would", "How'd": "How did", "What're": "What are", "Hasn't": "Has not", "Wasn't": "Was not", "Won't": "Will not",
+                       "There's": "There is", "Didn't": "Did not", "Doesn't": "Does not", "You're": "You are", "He's": "He is", "SO's": "So is", "We've": "We have", "Who's": "Who is", "Wouldn't": "Would not", 
+                       "Why's": "Why is", "WHO's": "Who is", "Let's": "Let us", "How's": "How is", "Can't": "Can not", "Where's": "Where is", "They'd": "They had", "Don't": "Do not", "Shouldn't":"Should not", "Aren't":"Are not", "ain't": "is not", "What's": "What is", "It's": "It is", "Isn't":"Is not", "aren't": "are not","can't": "cannot", "'cause": "because", "could've": "could have", "couldn't": "could not", "didn't": "did not",  "doesn't": "does not", "don't": "do not", "hadn't": "had not", "hasn't": "has not", "haven't": "have not", "he'd": "he would","he'll": "he will", "he's": "he is", "how'd": "how did", "how'd'y": "how do you", "how'll": "how will", "how's": "how is",  "I'd": "I would", "I'd've": "I would have", "I'll": "I will", "I'll've": "I will have","I'm": "I am", "I've": "I have", "i'd": "i would", "i'd've": "i would have", "i'll": "i will",  "i'll've": "i will have","i'm": "i am", "i've": "i have", "isn't": "is not", "it'd": "it would", "it'd've": "it would have", "it'll": "it will", "it'll've": "it will have","it's": "it is", "let's": "let us", "ma'am": "madam", "mayn't": "may not", "might've": "might have","mightn't": "might not","mightn't've": "might not have", "must've": "must have", "mustn't": "must not", "mustn't've": "must not have", "needn't": "need not", "needn't've": "need not have","o'clock": "of the clock", "oughtn't": "ought not", "oughtn't've": "ought not have", "shan't": "shall not", "sha'n't": "shall not", "shan't've": "shall not have", "she'd": "she would", "she'd've": "she would have", "she'll": "she will", "she'll've": "she will have", "she's": "she is", "should've": "should have", "shouldn't": "should not", "shouldn't've": "should not have", "so've": "so have","so's": "so as", "this's": "this is","that'd": "that would", "that'd've": "that would have", "that's": "that is", "there'd": "there would", "there'd've": "there would have", "there's": "there is", "here's": "here is","they'd": "they would", "they'd've": "they would have", "they'll": "they will", "they'll've": "they will have", "they're": "they are", "they've": "they have", "to've": "to have", "wasn't": "was not", "we'd": "we would", "we'd've": "we would have", "we'll": "we will", "we'll've": "we will have", "we're": "we are", "we've": "we have", "weren't": "were not", "what'll": "what will", "what'll've": "what will have", "what're": "what are",  "what's": "what is", "what've": "what have", "when's": "when is", "when've": "when have", "where'd": "where did", "where's": "where is", "where've": "where have", "who'll": "who will", "who'll've": "who will have", "who's": "who is", "who've": "who have", "why's": "why is", "why've": "why have", "will've": "will have", "won't": "will not", "won't've": "will not have", "would've": "would have", "wouldn't": "would not", "wouldn't've": "would not have", "y'all": "you all", "y'all'd": "you all would","y'all'd've": "you all would have","y'all're": "you all are","y'all've": "you all have","you'd": "you would", "you'd've": "you would have", "you'll": "you will", "you'll've": "you will have", "you're": "you are", "you've": "you have" }
 
 def clean_contractions(text):
     specials = ["’", "‘", "´", "`"]
@@ -169,40 +161,36 @@ def clean_contractions(text):
     return text
 
 
-# Xóa stopword
-stopwords = STOPWORDS  - {'ought', 'whom',"wouldn't", "you'll", "you've"}# bỏ đi một số từ khiến hiệu quả dự đoán giảm
+
+# Loại bỏ stopwords trong câu (đã thử) nhưng không dùng trong code này vì khi loại bỏ stopword thì bộ dữ liệu bị bỏ đi khá nhiều nên khả năng phân loại của mô hình giảm xuống
+stopwords = STOPWORDS 
 
 def remove_stopwords(x):
   x = [word.lower() for word in x.split() if word not in stopwords]
   x = ' '.join(x)
   return x
 
-# Xóa những từ trong chuỗi có 1 kí tự điều này để loại bỏ các biến x,t trong biểu thức toán
-def remove_single_character_words(text):
-    if isinstance(text, str):  # Kiểm tra xem text có phải là một chuỗi không
-        # Tách chuỗi thành danh sách các từ và giữ lại những từ có độ dài lớn hơn 1
-        text = ' '.join([word for word in text.split() if len(word) > 1])
-    return text
 
-# Gọi tất cả các hàm tiền xử lý dữ liệu trên
+# Gọi tất cả các hàm tiền xử lý dữ liệu trên 
 def data_cleaning(x):
-  x = x.lower()
-  x = clean_tag(x)
-  x = delete_number(x)
-  x = correct_mispell(x)
-  x = clean_contractions(x)
-  x = clean_punct(x)
-#  x = remove_single_character_words(x)
-#   x = lemma_text(x)
+  x = x.lower()                # Đưa về dạng chữ thường     
+  x = clean_tag(x)             # Xóa bỏ biểu thức toán học và link URL
+  x = delete_number(x)         # Xóa bỏ các kí tự số
+  x = correct_mispell(x)       # Đưa các từ viết tắt về dạng chuẩn 
+  x = clean_contractions(x)    # Đưa các từ về chung thống nhất 
+  x = clean_punct(x)           # Loại bỏ các kí tự đặc biệt
+#  x = remove_stopwords(x)
   return x
-    
-#Tạo ra 1 tập dữ liệu đã được cleaning
+
+
+# Tạo ra 1 tập dữ liệu đã được xử lý 
 train['question_text_cleaned'] = train['question_text'].apply(lambda x: data_cleaning(x))
 #print(*train['question_text_cleaned'], sep ='\n')
 test['question_text_cleaned'] = test['question_text'].apply(lambda x: data_cleaning(x))
 display(train, test)
 
-# Tạo thêm các cột để đánh giá tần suất xuất hiện của các ký tự 
+
+# Tạo thêm các cột để đánh giá tần suất xuất hiện của các ký tự từ đó sẽ hướng tối ưu xử lý dữ liệu hơn
 def generate_feature():
     train['qlen'] = train['question_text'].str.len() 
     train['n_words'] = train['question_text'].apply(lambda row: len(row.split(" ")))
