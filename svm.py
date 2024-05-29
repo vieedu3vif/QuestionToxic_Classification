@@ -57,8 +57,6 @@ def validate_undersampling():
     predict = predict_linearSVC(X_train, y_train, X_test)
     return f1_score(predict, y_test)
 
-print("F1-Score với Under Sampling: ", validate_undersampling())
+print("F1-Score with Under Sampling and LinearSVC: ", validate_undersampling())
 
-    
-
-print('F1-Score của base-model trên tập validation: ',validate_base_model())
+print('F1-Score of LinearSVC in validation: ',validate_base_model())
